@@ -66,7 +66,7 @@ const fetchData = async (resource) => {
 
 // Get City coords [Search By city coords]
 const searchByCoords = async (lat, lon) => {
-  let url = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=5&appid=${key}`;
+  let url = `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=5&appid=${key}`;
   // This fetch will return city [city]s coords response
   try {
     let cityCoords = await fetchData(url);
@@ -83,7 +83,7 @@ const searchByCoords = async (lat, lon) => {
 
 // Get City coords [Search By city name]
 const searchByName = async (cityName) => {
-  let url = `http://api.openweathermap.org/geo/1.0/direct?q=${cityName}&limit=1&appid=${key}`;
+  let url = `https://api.openweathermap.org/geo/1.0/direct?q=${cityName}&limit=1&appid=${key}`;
   // This fetch will return city [city]s coords response
   try {
     let cityCoords = await fetchData(url);
