@@ -4,11 +4,59 @@
   box-sizing: border-box;
 }
 
+body {
+  position: relative;
+  padding: 12px;
+  margin: 0;
+  font-size: 100%;
+  font-family: "Open Sans", sans-serif;
+  color: white;
+  overflow-x: hidden;
+  background: linear-gradient(45deg, #3c45ff, transparent);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+@media screen and (min-width: 700px) {
+  body {
+    padding: 20px;
+  }
+}
+
+body.loading {
+  overflow-y: hidden;
+  backdrop-filter: blur(30px);
+}
+
+[data-celsius] {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+span.temp-unit {
+  font-size: 0.75em;
+  margin-top: -3px;
+}
+
+.weather-by-hour__heading,
+.next-5-days__heading {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1em;
+  font-weight: normal;
+}
+
+@media screen and (min-width: 768px) {
+  .weather-by-hour__heading,
+  .next-5-days__heading {
+    font-size: 1.125em;
+  }
+}
+
 .notification {
   position: fixed;
   top: 1.5rem;
-  right: 1.5rem;
-  transform: translateX(50%);
+  right: 0;
   padding: 0.5rem;
   padding-left: 1rem;
   background: linear-gradient(
@@ -33,9 +81,9 @@
 }
 
 .notification.show {
-  transform: translateX(0);
   opacity: 1;
   visibility: visible;
+  transform: translateX(-1.5rem);
 }
 
 .notification.danger {
@@ -47,50 +95,47 @@
   font-weight: bold;
 }
 
-body {
-  position: relative;
-  padding: 12px;
-  margin: 0;
-  font-size: 100%;
-  font-family: "Open Sans", sans-serif;
-  color: white;
-  overflow-x: hidden;
-  background: linear-gradient(
-    45deg,
-    #3c45ff,
-    transparent
-  ); /* as an alternative */
-  /* background-image: url(../images/cloudly.jpg); */
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-attachment: fixed;
-  background-position: center bottom;
-  backdrop-filter: blur(2px);
+.notification__close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: inline-grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  cursor: pointer;
 }
 
-@media screen and (min-width: 700px) {
-  body {
-    padding: 20px;
-  }
+.loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  row-gap: 15px;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.1s linear;
 }
 
-body.loading {
-  overflow-y: hidden;
-  backdrop-filter: blur(30px);
+body.loading .loader {
+  opacity: 1;
+  visibility: visible;
 }
 
-.weather-by-hour__heading,
-.next-5-days__heading {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1em;
-  font-weight: normal;
-}
-
-@media screen and (min-width: 768px) {
-  .weather-by-hour__heading,
-  .next-5-days__heading {
-    font-size: 1.125em;
-  }
+.loader .spin {
+  width: 85px;
+  height: 85px;
+  border-radius: 50%;
+  border: 6px solid rgb(20, 136, 204);
+  border-top-color: transparent;
+  animation: spinner 1.5s infinite linear;
 }
 
 .main-container {
@@ -119,6 +164,7 @@ body.loading .main-container {
 .header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
 }
 
@@ -133,6 +179,59 @@ body.loading .main-container {
   font-weight: 600;
 }
 
+.location-and-date__location > img {
+  width: 18px;
+  margin-left: 4px;
+}
+
+.location-and-date__time {
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.app-temp-unit {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.header .switch-wrapper {
+  position: relative;
+  width: 66px;
+  height: 26px;
+  background: #fff;
+  border-radius: 40px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.switch-wrapper .switch-input {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  appearance: none;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.switch-wrapper .switch-button {
+  position: absolute;
+  left: 4px;
+  top: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  z-index: 0;
+  background: #666;
+  transition: all 0.2s ease-in-out;
+}
+
+.switch-input:checked + .switch-button {
+  left: calc(100% - (22px + 4px));
+  background: linear-gradient(135deg, #3c45ff, transparent);
+}
+
 @media (max-width: 450px) {
   .header {
     flex-direction: column-reverse;
@@ -143,11 +242,6 @@ body.loading .main-container {
   }
 }
 
-.header .search-location {
-  width: 300px;
-  margin-top: 1.1rem;
-}
-
 .header .search-location .form-control {
   position: relative;
   border-radius: 6px;
@@ -155,18 +249,32 @@ body.loading .main-container {
 }
 .serach-box {
   position: relative;
+  width: 300px;
+}
+
+@media (max-width: 500px) {
+  .serach-box {
+    width: 100%;
+  }
 }
 
 .prev-search {
   position: absolute;
+  right: 0;
+  top: calc(100% + 15px);
   width: 100%;
-  margin-top: 10px;
   border-radius: 4px;
   color: #000;
   font-size: 17px;
   height: 0;
   overflow: hidden;
   transition: 0.2s ease-in-out height;
+}
+
+@media (max-width: 499px) {
+  .prev-search {
+    top: 100%;
+  }
 }
 
 .prev-search p {
@@ -181,7 +289,6 @@ body.loading .main-container {
 .prev-search .prev-search_location {
   display: flex;
   align-items: center;
-  gap: 15px;
   margin-bottom: 3px;
   cursor: pointer;
   background-color: rgba(255, 255, 255, 0.7);
@@ -208,6 +315,7 @@ body.loading .main-container {
   justify-content: center;
   display: flex;
   align-items: center;
+  margin-left: 5px;
   transition: 0.2s ease-in-out;
 }
 .prev-search_location div:last-of-type:hover {
@@ -278,6 +386,11 @@ body.loading .main-container {
   font-weight: 300;
 }
 
+.current-temperature__value .temp-unit {
+  font-size: 40px;
+  margin-top: 6px;
+}
+
 .current-temperature__summary {
   margin-top: -0.5em;
   margin-left: -0.6em;
@@ -329,6 +442,12 @@ body.loading .main-container {
 /* weather-by-hour */
 .weather-by-hour {
   width: 100%;
+}
+
+@media (max-width: 700px) {
+  .weather-by-hour {
+    margin-top: 1rem;
+  }
 }
 
 .weather-by-hour__container {
@@ -428,38 +547,6 @@ body.loading .main-container {
   .next-5-days__icon {
     order: -1;
   }
-}
-
-.loader {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  row-gap: 15px;
-  font-size: 1.4rem;
-  letter-spacing: 1px;
-  visibility: hidden;
-  opacity: 0;
-  transition: 0.1s linear;
-}
-
-body.loading .loader {
-  opacity: 1;
-  visibility: visible;
-}
-
-.loader .spin {
-  width: 85px;
-  height: 85px;
-  border-radius: 50%;
-  border: 6px solid rgb(20, 136, 204);
-  border-top-color: transparent;
-  animation: spinner 1.5s infinite linear;
 }
 
 @keyframes spinner {
