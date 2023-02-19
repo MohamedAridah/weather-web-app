@@ -4,13 +4,14 @@ let prevSearchResults = localStorage.getItem("recentLocations")
 
 // Page Elemets
 const mainContainer = document.querySelector(".main-container");
+const popUpElements = document.querySelectorAll("[data-close-popup]");
 
 // Fetching Functionality
 const key = "4e77ee1eb00f41a9cf3d01d583a2d145";
 
 const buildWeatherUI = (cityInfo) => {
   fetchData(
-    ` https://api.openweathermap.org/data/2.5/onecall?lat=${cityInfo.lat}&lon=${cityInfo.lon}&appid=${key}&units=metric`
+    `https://api.openweathermap.org/data/2.5/onecall?lat=${cityInfo.lat}&lon=${cityInfo.lon}&appid=${key}&units=metric`
   )
     .then((data) => {
       console.log("OneCall API Done...");
@@ -32,6 +33,8 @@ const buildWeatherUI = (cityInfo) => {
         iconDescription: data.current.weather[0].description,
         cityName: cityInfo.name,
         country: cityInfo.country,
+        min: Math.round(data.daily[0].temp.min),
+        max: Math.round(data.daily[0].temp.max),
       });
     })
     .catch((err) => {
@@ -124,15 +127,37 @@ const notification = (visibility = "hide", title, text, isDanger = true) => {
 
 // Page Components
 const locationAndDate = (location, date) => {
+  const locationStatus = localStorage.getItem("locationStatus");
+  const locationIcon =
+    locationStatus == "allowed"
+      ? { icon: "locationAllowed.svg", alt: "location access allowed" }
+      : { icon: "locationPaned.svg", alt: "location access refused" };
   return `
     <header class="header">
         <div class="location-and-date">
           <h1 class="location-and-date__location">
           ${location.name}, ${location.country}
+            <img src="./icons/${locationIcon.icon}" alt="" title="${
+    locationIcon.alt
+  }" onclick="searchByCurrentPosition()"/>
           </h1>
           <div class="location-and-date__date">
             ${date.weekday.full} ${dateSuffix(date.date)} ${date.month.full}
+            <span class='location-and-date__time' onclick="searchByName('${
+              location.name
+            }, ${location.country}')">${date.shortHour}:${
+    date.minute
+  }${date.hour12.toLowerCase()} &#8635;
+            </span>
           </div>
+        </div>
+        <div class='app-temp-unit'>
+          <span>&deg;C</span>
+          <div class='switch-wrapper' onclick="switcherHandeler()">
+            <input type='checkbox' class='switch-input' />
+            <span class='switch-button'></span>
+          </div>
+          <span>&deg;F</span>
         </div>
         <div class="serach-box">
           <form class="search-location" onsubmit="searchLocationForecast()">
@@ -148,21 +173,30 @@ const locationAndDate = (location, date) => {
               ${
                 prevSearchResults.length != 0
                   ? prevSearchResults
-                      .map(({ icon, iconDescription, cityName, country }) => {
-                        return `
-                    <div class="prev-search_location" data-location="${
-                      cityName.split(",")[0]
-                    }">
+                      .map(
+                        ({
+                          icon,
+                          iconDescription,
+                          cityName,
+                          country,
+                          min,
+                          max,
+                        }) => {
+                          return `
+                    <div class="prev-search_location" data-location="${cityName},${country}">
                       <img
                         src="${icon}"
                         alt="${iconDescription}"
+                        title="${iconDescription}"
                       />
                       <div>${cityName}, ${country}</div>
+                      <div>${min}&deg; | ${max}&deg;</div>
                       <!-- <div>&#10006;</div> -->
                       <div>&#x2715</div>
                     </div>
                     `;
-                      })
+                        }
+                      )
                       .join(" ")
                   : ""
               }
@@ -185,7 +219,10 @@ const currentTemp = ({ temp }, { main, icon, description }) => {
       />
     </div>
     <div class="current-temperature__content-container">
-      <div class="current-temperature__value">${Math.round(temp)}&deg;</div>
+      <div class="current-temperature__value" data-celsius="true">
+        <span>${Math.round(temp)}</span>
+        <span class='temp-unit'>&deg;C</span>
+      </div>
       <div class="current-temperature__summary" style="text-transform:capitalize;">${main}, ${description}</div>
     </div>
   </div>`;
@@ -206,7 +243,10 @@ const currentStats = ({
   return `
     <div class="current-stats">
       <div>
-        <div class="current-stats__value high-value">${feels_like}&deg;</div>
+        <div class="current-stats__value high-value" data-celsius="true">
+          <span>${feels_like}</span>
+          <span class='temp-unit'>&deg;C</span>
+        </div>
         <div class="current-stats__label">Feels Like</div>
         <div class="current-stats__value low-value">${visibility} km</div>
         <div class="current-stats__label">Visibility</div>
@@ -253,7 +293,10 @@ const weatherByHour = (hourly) => {
                 }@4x.png" alt="${weather[0].description}" title="${
               weather[0].description
             }"  />
-                <div>${Math.round(temp)}&deg;</div>
+                <div data-celsius="true">
+                  <span>${Math.round(temp)}</span>
+                  <span class='temp-unit'>&deg;C</span>
+                </div>
               </div>`;
           })
           .join(" ")}
@@ -283,12 +326,18 @@ const next5Days = (daily) => {
                 </div>
           
                 <div class="next-5-days__low">
-                  ${min}&deg;
+                   <div class="next-5-days__value" data-celsius="true">
+                   <span>${min}</span>
+                    <span class='temp-unit'>&deg;C</span>
+                   </div> 
                   <div class="next-5-days__label">Low</div>
                 </div>
           
                 <div class="next-5-days__high">
-                ${max}&deg;
+                  <div class="next-5-days__value" data-celsius="true">
+                    <span>${max}</span>
+                    <span class='temp-unit'>&deg;C</span>
+                  </div>
                   <div class="next-5-days__label">High</div>
                 </div>
           
@@ -398,10 +447,11 @@ const successCallback = (position) => {
   let { latitude: lat, longitude: lon } = position.coords;
 
   searchByCoords(lat, lon);
+  localStorage.setItem("locationStatus", "allowed");
 };
 
 const errorCallback = (error) => {
-  console.log(error);
+  localStorage.setItem("locationStatus", "denied");
   if (error.code === 1) {
     notification(
       "show",
@@ -431,11 +481,14 @@ const options = {
   maximumAge: 3600000, // cash data for one hour only
 };
 
-navigator.geolocation.getCurrentPosition(
-  successCallback,
-  errorCallback,
-  options
-);
+const searchByCurrentPosition = () => {
+  navigator.geolocation.getCurrentPosition(
+    successCallback,
+    errorCallback,
+    options
+  );
+};
+searchByCurrentPosition();
 
 // Search Form Function
 const searchLocationForecast = () => {
@@ -528,4 +581,65 @@ const removeDublicates = (arr) => {
     );
   });
   return uniqueArray;
+};
+
+// Close Popups like [notification and etc...]
+const closePopups = (e, closeBtn = "close-popup-btn") => {
+  return new Promise((resolve, reject) => {
+    e.currentTarget.querySelector(`.${closeBtn}`) == e.target
+      ? resolve("success")
+      : reject("error happend");
+  });
+};
+
+popUpElements.forEach((element) => {
+  element.addEventListener("click", (e) => {
+    closePopups(e)
+      .then((d) => {
+        console.log(d);
+
+        // Hide that Elemetn
+        element.classList.remove("show");
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  });
+});
+
+const celsiusToFahrenheit = (num) => {
+  const temp = Math.round(num * 1.8 + 32);
+  const symbol = "&deg;F";
+  return { temp, symbol };
+};
+
+const fahrenheitToCelsius = (num) => {
+  const temp = Math.round((num - 32) / 1.8);
+  const symbol = "&deg;C";
+  return { temp, symbol };
+};
+
+const changeAppTempUnit = (convertTo) => {
+  let tempElemets = document.querySelectorAll("[data-celsius='true']");
+  tempElemets.forEach((element) => {
+    const value = element.querySelector("span:first-of-type");
+    const unit = element.querySelector("span:last-of-type");
+    if (convertTo == "celsius") {
+      const toCelsuis = fahrenheitToCelsius(+value.textContent.trim());
+      value.textContent = toCelsuis.temp;
+      unit.innerHTML = toCelsuis.symbol;
+    }
+
+    if (convertTo == "fahrenheit") {
+      const toFahrenheit = celsiusToFahrenheit(+value.textContent.trim());
+      value.textContent = toFahrenheit.temp;
+      unit.innerHTML = toFahrenheit.symbol;
+    }
+  });
+};
+
+const switcherHandeler = () => {
+  event.currentTarget.querySelector(".switch-input").checked
+    ? changeAppTempUnit("fahrenheit")
+    : changeAppTempUnit("celsius");
 };
